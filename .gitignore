@@ -12,3 +12,4 @@
 !/bootstrap/cache/.gitignore
 /.phpunit.cache/
 /certs/
+/*.pem

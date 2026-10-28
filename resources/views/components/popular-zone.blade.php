@@ -1,0 +1,6 @@
+@props(['city', 'zone', 'parameters', 'photo'])
+<a href="{{ route('catalog', $parameters) }}" class="group relative isolate flex min-h-[250px] items-end overflow-hidden rounded-xl bg-stone-300 p-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0F382F]">
+    <img src="https://images.unsplash.com/{{ $photo }}?auto=format&amp;fit=crop&amp;w=700&amp;h=500&amp;q=80" alt="Interior de referencia para explorar alquileres en {{ $zone }}, {{ $city }}, Honduras - AlquilaHN" loading="lazy" decoding="async" width="700" height="500" class="absolute inset-0 -z-20 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105">
+    <div class="absolute inset-0 -z-10 bg-gradient-to-t from-stone-950/85 via-stone-950/10 to-transparent"></div>
+    <div class="flex w-full items-end justify-between gap-3 text-white"><div><p class="text-[10px] font-medium uppercase tracking-[0.15em] text-white/70">{{ $city }}</p><h3 class="mt-1 text-base font-semibold tracking-tight">{{ $zone }}</h3><p class="mt-2 text-xs text-white/80">Explorar la zona</p></div><span aria-hidden="true" class="text-xl text-white/90 transition-transform group-hover:translate-x-1">↗</span></div>
+</a>

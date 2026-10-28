@@ -1,0 +1,14 @@
+/vendor/
+/node_modules/
+/.npm-cache/
+/public/build/
+/public/hot
+/.env
+/.env.*.local
+/database/*.sqlite*
+/storage/*
+!/storage/.gitignore
+/bootstrap/cache/*
+!/bootstrap/cache/.gitignore
+/.phpunit.cache/
+/certs/

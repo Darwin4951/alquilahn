@@ -1,0 +1,20 @@
+name: Tests
+on: [push, pull_request]
+jobs:
+  portal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, pdo_sqlite, pdo_mysql, gd, intl, zip
+          coverage: none
+      - run: mkdir -p bootstrap/cache storage/framework/cache/data storage/framework/sessions storage/framework/views storage/app/private storage/logs
+      - run: composer install --prefer-dist --no-interaction
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install
+      - run: npm run build
+      - run: php artisan test

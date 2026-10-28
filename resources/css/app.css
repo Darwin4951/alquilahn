@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base {
+    body { @apply bg-[#FAF9F6] text-[#18181b] antialiased; font-family: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    input:not([type=checkbox]):not([type=file]), select, textarea { @apply w-full rounded-lg border-stone-300 focus:border-[#0F382F] focus:ring-[#0F382F]; }
+    label { @apply text-sm font-medium text-stone-700; }
+    button, a, input, select, textarea { @apply focus-visible:outline-offset-4; }
+}
+@layer components { .btn { @apply inline-flex items-center justify-center rounded-xl bg-teal-800 px-5 py-3 text-sm font-semibold text-white hover:bg-teal-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 disabled:opacity-50; } .panel { @apply rounded-2xl border border-stone-200 bg-white p-5 shadow-sm; } }
+[x-cloak] { display: none !important; }
+@layer components {
+    .catalog-field { @apply w-full truncate rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm text-stone-800 outline-none transition-all focus:border-[#0F382F] focus:ring-2 focus:ring-[#0F382F]/15; }
+    select.catalog-field { @apply pr-8; }
+    .catalog-label { @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-stone-500; }
+    .search-label { @apply mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-500; }
+    .search-control { @apply w-full min-w-0 rounded-lg border-0 bg-stone-50 px-3 py-2 text-xs text-stone-800 placeholder-stone-400 focus:bg-white focus:ring-2 focus:ring-[#0F382F]/20; }
+    select.search-control { @apply pr-8; }
+    .category-link { @apply flex shrink-0 items-center gap-2.5 border-b-2 border-transparent px-1 py-5 text-xs font-medium text-stone-500 transition-colors hover:border-[#0F382F] hover:text-[#0F382F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0F382F]; }
+}

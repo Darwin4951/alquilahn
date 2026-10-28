@@ -33,7 +33,17 @@
     </main>
     <footer class="mx-auto mt-14 max-w-7xl border-t border-stone-200 px-4 pt-9 text-xs text-stone-500 sm:px-6 lg:px-8">
         <x-seo-links />
-        <div class="flex flex-col items-start justify-between gap-3 border-t border-stone-200 py-6 sm:flex-row sm:items-center"><span class="font-semibold text-[#0F382F]">AlquilaHN <span class="ml-2 font-normal text-stone-400">· Alquileres en Honduras</span></span><span>Contacta directamente con el propietario.</span></div>
+        <div class="grid gap-5 border-t border-stone-200 py-6 sm:grid-cols-2 sm:items-center lg:grid-cols-3">
+            <div><p class="font-semibold text-[#0F382F]">AlquilaHN</p><p class="mt-1 text-stone-400">Alquileres en Honduras</p></div>
+            <div>
+                <p class="font-semibold text-stone-700">Contacto</p>
+                <div class="mt-1 flex flex-col items-start gap-1.5">
+                    <a href="mailto:garmendiaddarwin@gmail.com" class="transition-colors hover:text-[#0F382F]">garmendiaddarwin@gmail.com</a>
+                    <a href="https://wa.me/50497494465" target="_blank" rel="noopener noreferrer" aria-label="Contactar por WhatsApp al +504 9749-4465" class="transition-colors hover:text-[#0F382F]">WhatsApp: +504 9749-4465</a>
+                </div>
+            </div>
+            <p class="text-stone-500">Contacta directamente con el propietario.</p>
+        </div>
     </footer>
     @livewireScripts
 </body>

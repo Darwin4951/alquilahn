@@ -218,7 +218,7 @@ Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->midd
 
 ```php
 <?php
-return ['google' => ['client_id' => env('GOOGLE_CLIENT_ID'), 'client_secret' => env('GOOGLE_CLIENT_SECRET'), 'redirect' => env('GOOGLE_REDIRECT_URI')]];
+return ['google' => ['client_id' => env('GOOGLE_CLIENT_ID'), 'client_secret' => env('GOOGLE_CLIENT_SECRET'), 'redirect' => env('GOOGLE_REDIRECT_URI'), 'site_verification' => env('GOOGLE_SITE_VERIFICATION')]];
 ```
 
 ### `app/Http/Requests/Auth/LoginRequest.php`
@@ -1123,6 +1123,7 @@ LOG_LEVEL=warning
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
+GOOGLE_SITE_VERIFICATION=
 CLOUDINARY_URL=
 MAIL_MAILER=log
 MAIL_FROM_ADDRESS=hola@example.com
@@ -1509,6 +1510,7 @@ window.addEventListener('seo-updated', (event) => {
 !/bootstrap/cache/.gitignore
 /.phpunit.cache/
 /certs/
+/*.pem
 ```
 
 ### `.dockerignore`
@@ -2223,6 +2225,9 @@ class SitemapController extends Controller
 <meta name="description" content="{{ $seo['description'] }}">
 <link rel="canonical" href="{{ $seo['canonical'] }}">
 <meta name="robots" content="{{ $seo['robots'] }}">
+@if(config('services.google.site_verification'))
+<meta name="google-site-verification" content="{{ config('services.google.site_verification') }}">
+@endif
 <meta name="geo.region" content="HN">
 <meta name="geo.placename" content="Honduras">
 <meta property="og:locale" content="es_HN">

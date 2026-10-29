@@ -19,9 +19,17 @@ class PropertyCatalog extends Component
     #[Url(except: '')] public string $maxPrice = '';
     #[Url(except: true)] public bool $onlyAvailable = true;
     #[Url(except: '')] public string $q = '';
+    #[Url(except: '')] public string $operation = '';
+    #[Url(except: '')] public string $brand = '';
+    #[Url(except: '')] public string $vehicleModel = '';
+    #[Url(except: '')] public string $minYear = '';
+    #[Url(except: '')] public string $maxYear = '';
+    #[Url(except: '')] public string $minArea = '';
+    #[Url(except: '')] public string $maxArea = '';
+    #[Url(except: '')] public string $areaUnit = '';
     public string $keywords = '';
     public array $filters = [];
-    private const FILTER_FIELDS = ['department', 'city', 'search', 'type', 'minPrice', 'maxPrice', 'onlyAvailable'];
+    private const FILTER_FIELDS = ['department', 'city', 'search', 'type', 'minPrice', 'maxPrice', 'onlyAvailable', 'operation', 'brand', 'vehicleModel', 'minYear', 'maxYear', 'minArea', 'maxArea', 'areaUnit'];
     public function mount(): void { $this->filters = $this->only(self::FILTER_FIELDS); $this->keywords = $this->q; }
     public function searchKeywords(): void
     {
@@ -34,6 +42,9 @@ class PropertyCatalog extends Component
     public function updatedFilters($value, $key): void
     {
         if ($key === 'department') { $this->filters['city'] = ''; }
+        if ($key === 'type') {
+            foreach (['brand', 'vehicleModel', 'minYear', 'maxYear', 'minArea', 'maxArea', 'areaUnit'] as $field) { $this->filters[$field] = ''; }
+        }
     }
     public function searchProperties(): void
     {
@@ -55,7 +66,7 @@ class PropertyCatalog extends Component
     public function updated($name): void { if ($name === 'department') { $this->city = ''; } $this->resetPage(); }
     public function clearFilters(): void
     {
-        $this->reset('department', 'city', 'search', 'type', 'minPrice', 'maxPrice', 'onlyAvailable', 'q', 'keywords');
+        $this->reset('operation', 'brand', 'vehicleModel', 'minYear', 'maxYear', 'minArea', 'maxArea', 'areaUnit', 'department', 'city', 'search', 'type', 'minPrice', 'maxPrice', 'onlyAvailable', 'q', 'keywords');
         $this->filters = $this->only(self::FILTER_FIELDS);
         $this->resetValidation();
         $this->resetPage();
@@ -67,6 +78,12 @@ class PropertyCatalog extends Component
         $rules['department'] = ['nullable', Rule::in(Honduras::departments())];
         $rules['city'] = ['nullable', Rule::in(Honduras::cities((string) ($values['department'] ?? '')))];
         $rules['onlyAvailable'] = ['required', 'boolean'];
+        $rules['operation'] = ['nullable', Rule::in(array_keys(Property::OPERATIONS))];
+        foreach (['brand', 'vehicleModel'] as $field) { $rules[$field] = ['nullable', 'string', 'max:100']; }
+        foreach (['minYear', 'maxYear'] as $field) { $rules[$field] = ['nullable', 'integer', 'min:1886', 'max:'.(date('Y') + 1)]; }
+        foreach (['minArea', 'maxArea'] as $field) { $rules[$field] = ['nullable', 'numeric', 'min:0', 'max:999999999.99']; }
+        $rules['areaUnit'] = ['nullable', Rule::in(['m2', 'v2'])];
+        foreach (['Year', 'Area'] as $suffix) { if (($values['min'.$suffix] ?? '') !== '') { $rules['max'.$suffix][] = 'gte:min'.$suffix; } }
         return $rules;
     }
     public function render()
@@ -75,7 +92,7 @@ class PropertyCatalog extends Component
         $values['q'] = $this->q;
         $validator = validator($values, array_merge($this->filterRules($values), ['q' => ['nullable', 'string', 'max:150']]));
         if ($validator->fails()) { $this->setErrorBag($validator->errors()); }
-        $query = Property::query()->select(['id', 'title', 'type', 'price', 'department', 'city', 'colonia', 'address', 'description', 'whatsapp', 'is_available', 'images', 'created_at', 'updated_at']);
+        $query = Property::query()->select(['operation', 'is_sold', 'area', 'area_unit', 'brand', 'vehicle_model', 'year', 'id', 'title', 'type', 'price', 'department', 'city', 'colonia', 'address', 'description', 'whatsapp', 'is_available', 'images', 'created_at', 'updated_at']);
         if ($validator->fails()) { $query->whereRaw('1 = 0'); }
         else {
             $query->when($this->onlyAvailable, fn ($q) => $q->where('is_available', true))
@@ -84,6 +101,17 @@ class PropertyCatalog extends Component
                 ->when($this->type !== '', fn ($q) => $q->where('type', $this->type))
                 ->when($this->minPrice !== '', fn ($q) => $q->where('price', '>=', $this->minPrice))
                 ->when($this->maxPrice !== '', fn ($q) => $q->where('price', '<=', $this->maxPrice));
+            $query->when($this->operation !== '', fn ($q) => $q->where('operation', $this->operation));
+            if ($this->type === 'vehiculo') {
+                foreach (['brand' => $this->brand, 'vehicle_model' => $this->vehicleModel] as $column => $value) { if ($value !== '') { $query->where($column, $value); } }
+                if ($this->minYear !== '') { $query->where('year', '>=', $this->minYear); }
+                if ($this->maxYear !== '') { $query->where('year', '<=', $this->maxYear); }
+            }
+            if ($this->type === 'terreno' && ($this->minArea !== '' || $this->maxArea !== '' || $this->areaUnit !== '')) {
+                $query->where('area_unit', $this->areaUnit ?: 'm2');
+                if ($this->minArea !== '') { $query->where('area', '>=', $this->minArea); }
+                if ($this->maxArea !== '') { $query->where('area', '<=', $this->maxArea); }
+            }
             $words = preg_split('/\s+/u', trim($this->q), -1, PREG_SPLIT_NO_EMPTY);
             $ignored = ['en', 'de', 'del', 'la', 'el', 'los', 'las', 'un', 'una', 'y', 'cerca', 'alquiler', 'alquilar', 'renta', 'rentar'];
             $typeWords = ['casa' => 'casa', 'casas' => 'casa', 'apartamento' => 'apartamento', 'apartamentos' => 'apartamento', 'apto' => 'apartamento', 'aptos' => 'apartamento', 'cuarto' => 'cuarto', 'cuartos' => 'cuarto', 'habitacion' => 'cuarto', 'habitaciones' => 'cuarto'];
@@ -93,7 +121,7 @@ class PropertyCatalog extends Component
                 $term = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], Str::lower($word)).'%';
                 // Every word must match, but words may occur in different fields.
                 $query->where(function ($match) use ($term, $normalized, $typeWords) {
-                    foreach (['title', 'description', 'colonia', 'address', 'city', 'department'] as $column) {
+                    foreach (['title', 'description', 'colonia', 'address', 'city', 'department', 'brand', 'vehicle_model'] as $column) {
                         $match->orWhereRaw("LOWER($column) LIKE ? ESCAPE '!'", [$term]);
                     }
                     if (isset($typeWords[$normalized])) { $match->orWhere('type', $typeWords[$normalized]); }

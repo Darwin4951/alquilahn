@@ -17,11 +17,14 @@
             <a href="{{ route('catalog') }}" class="flex items-center text-xl font-bold tracking-tight text-[#0F382F]">Alquila<span class="text-[#D97706]">HN</span><span class="mx-3 hidden h-4 w-px bg-stone-300 lg:block" aria-hidden="true"></span><span class="hidden text-xs font-normal tracking-normal text-stone-500 lg:inline">Tu próximo hogar, aquí.</span></a>
             <div class="flex flex-wrap items-center gap-4 sm:gap-6">
                 <a href="{{ route('catalog') }}" class="text-sm font-medium text-stone-600 transition-colors hover:text-stone-900">Explorar</a>
+                @foreach(['Alquileres' => ['operation' => 'alquiler'], 'Casas en venta' => ['operation' => 'venta', 'type' => 'casa'], 'Terrenos en venta' => ['operation' => 'venta', 'type' => 'terreno'], 'Vehículos en venta' => ['operation' => 'venta', 'type' => 'vehiculo']] as $label => $parameters)
+                <a href="{{ route('catalog', $parameters) }}" class="text-sm font-medium text-stone-600 transition-colors hover:text-stone-900">{{ $label }}</a>
+                @endforeach
                 @auth
                     <a href="{{ route('properties.manage') }}" class="rounded-lg bg-[#0F382F] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#164a3e]">Mis anuncios</a>
                     <form method="POST" action="{{ route('logout') }}">@csrf<button class="text-sm font-medium text-stone-600 hover:text-stone-900">Salir</button></form>
                 @else
-                    <a href="{{ route('login') }}" class="text-sm font-medium text-stone-600 transition-colors hover:text-stone-900">Ingresar</a><a class="rounded-lg bg-[#0F382F] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#164a3e]" href="{{ route('register') }}">Publicar inmueble</a>
+                    <a href="{{ route('login') }}" class="text-sm font-medium text-stone-600 transition-colors hover:text-stone-900">Ingresar</a><a class="rounded-lg bg-[#0F382F] px-4 py-2 text-sm font-medium text-white shadow-sm transition-all hover:bg-[#164a3e]" href="{{ route('register') }}">Publicar anuncio</a>
                 @endauth
             </div>
         </nav>

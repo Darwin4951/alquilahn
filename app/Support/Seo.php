@@ -16,7 +16,7 @@ class Seo
     public static function canonicalParameters(array $values): array
     {
         $clean = [];
-        foreach (['department', 'city', 'type', 'search', 'q', 'minPrice', 'maxPrice', 'onlyAvailable', 'page'] as $key) {
+        foreach (['department', 'city', 'type', 'search', 'q', 'minPrice', 'maxPrice', 'onlyAvailable', 'page', 'operation', 'brand', 'vehicleModel', 'minYear', 'maxYear', 'minArea', 'maxArea', 'areaUnit'] as $key) {
             $value = $values[$key] ?? '';
             if (! is_scalar($value)) { continue; }
             $value = is_bool($value) ? ($value ? '1' : '0') : trim((string) $value);
@@ -24,6 +24,9 @@ class Seo
             if ($key === 'department' && ! in_array($value, Honduras::departments(), true)) { continue; }
             if ($key === 'city' && ! in_array($value, Honduras::cities($clean['department'] ?? ''), true)) { continue; }
             if ($key === 'type' && ! array_key_exists($value, Property::TYPES)) { continue; }
+            if ($key === 'operation' && ! array_key_exists($value, Property::OPERATIONS)) { continue; }
+            if ($key === 'areaUnit' && ! in_array($value, ['m2', 'v2'], true)) { continue; }
+            if (in_array($key, ['minYear', 'maxYear', 'minArea', 'maxArea'], true) && (!is_numeric($value) || (float) $value < 0)) { continue; }
             if ($key === 'onlyAvailable') {
                 if (in_array($value, ['0', 'false'], true)) { $clean[$key] = '0'; }
                 continue;
@@ -57,7 +60,7 @@ class Seo
         $parameters = self::canonicalParameters(array_merge($values, ['page' => $properties->currentPage()]));
         $city = $parameters['city'] ?? '';
         $department = $parameters['department'] ?? ($city !== '' ? Honduras::departmentFor($city) : null);
-        $types = ['casa' => 'Casas', 'apartamento' => 'Apartamentos', 'cuarto' => 'Cuartos'];
+        $types = ['casa' => 'Casas', 'apartamento' => 'Apartamentos', 'cuarto' => 'Cuartos', 'local' => 'Locales comerciales', 'terreno' => 'Terrenos', 'vehiculo' => 'Vehículos'];
         $type = $types[$parameters['type'] ?? ''] ?? null;
         $location = $city !== '' ? $city.($department ? ', '.$department : '') : ($department ?: 'Honduras');
         $title = config('seo.title');
@@ -70,6 +73,11 @@ class Seo
         }
         $seo = self::base($title, $description, self::url('/', $parameters), $valid ? 'index, follow' : 'noindex, follow');
         $seo['heading'] = ($type || $city !== '' || $department) ? 'Alquiler de '.Str::lower($type ?: 'inmuebles').' en '.$location : 'Alquiler de casas, apartamentos y cuartos en Honduras';
+        if (($parameters['operation'] ?? '') === 'venta' || in_array($parameters['type'] ?? '', ['terreno', 'vehiculo'], true)) {
+            $seo['heading'] = ($type ?: 'Anuncios').' en venta en '.$location;
+            $seo['title'] = $seo['heading'].' | AlquilaHN'.($properties->currentPage() > 1 ? ' · Página '.$properties->currentPage() : '');
+            $seo['description'] = self::description('Encuentra '.Str::lower($type ?: 'anuncios').' en venta en '.$location.'. Precios en lempiras y contacto directo por WhatsApp.');
+        }
         if ($properties->count()) {
             $items = [];
             foreach ($properties as $index => $property) {
@@ -85,7 +93,7 @@ class Seo
     public static function property(Property $property): array
     {
         $seo = self::base($property->title.' en '.$property->city.' | AlquilaHN', self::description(
-            Property::TYPES[$property->type].' en alquiler en '.$property->colonia.', '.$property->city.'. L. '.number_format((float) $property->price, 2).' al mes. '.$property->description
+            Property::TYPES[$property->type].' en '.($property->isSale() ? 'venta' : 'alquiler').' en '.$property->colonia.', '.$property->city.'. L. '.number_format((float) $property->price, 2).($property->isSale() ? ' precio total. ' : ' al mes. ').$property->description
         ), self::url(route('properties.show', $property, false)));
         $seo['image'] = $property->images[0] ?? config('seo.image');
         $seo['schema']['@graph'][] = self::listing($property);
@@ -114,18 +122,24 @@ class Seo
     public static function listing(Property $property): array
     {
         $url = self::url(route('properties.show', $property, false));
-        return ['@type' => 'RealEstateListing', '@id' => $url.'#listing', 'url' => $url, 'name' => $property->title,
+        $listing = ['@type' => $property->type === 'vehiculo' ? 'Product' : 'RealEstateListing', '@id' => $url.'#listing', 'url' => $url, 'name' => $property->title,
             'description' => strip_tags($property->description ?? ''), 'image' => $property->images,
             'datePosted' => $property->created_at?->toAtomString(), 'dateModified' => $property->updated_at?->toAtomString(),
             'inLanguage' => 'es-HN', 'isPartOf' => ['@id' => self::url().'#website'],
             'offers' => ['@type' => 'Offer', 'url' => $url, 'price' => $property->price, 'priceCurrency' => 'HNL',
-                'businessFunction' => 'http://purl.org/goodrelations/v1#LeaseOut',
+                'businessFunction' => 'http://purl.org/goodrelations/v1#'.($property->isSale() ? 'Sell' : 'LeaseOut'),
                 'availability' => 'https://schema.org/'.($property->is_available ? 'InStock' : 'OutOfStock'),
                 'priceSpecification' => ['@type' => 'UnitPriceSpecification', 'price' => $property->price, 'priceCurrency' => 'HNL', 'unitText' => 'mes', 'billingDuration' => 'P1M'],
-                'itemOffered' => ['@type' => [match ($property->type) { 'casa' => 'House', 'apartamento' => 'Apartment', default => 'Room' }, 'Product'],
+                'itemOffered' => ['@type' => [match ($property->type) { 'casa' => 'House', 'apartamento' => 'Apartment', 'terreno' => 'Landform', 'local' => 'Place', 'vehiculo' => 'Vehicle', default => 'Room' }, 'Product'],
                     'name' => $property->title, 'address' => ['@type' => 'PostalAddress',
                         'streetAddress' => $property->colonia.', '.$property->address, 'addressLocality' => $property->city,
                         'addressRegion' => $property->department ?? Honduras::departmentFor($property->city), 'addressCountry' => 'HN']]],
         ];
+        if ($property->isSale()) { unset($listing['offers']['priceSpecification']); }
+        if ($property->type === 'vehiculo') {
+            unset($listing['offers']['itemOffered']['address']);
+            $listing['offers']['itemOffered'] += ['brand' => $property->brand, 'model' => $property->vehicle_model, 'vehicleModelDate' => $property->year, 'mileageFromOdometer' => ['@type' => 'QuantitativeValue', 'value' => $property->mileage, 'unitCode' => 'KMT']];
+        }
+        return $listing;
     }
 }
